@@ -1,5 +1,5 @@
 {
     "board": "arduino:avr:uno",
-    "port": "/dev/tty.Stone-SPPDev",
+    "port": "COM3",
     "sketch": "janken.ino"
 }

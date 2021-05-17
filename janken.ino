@@ -1,148 +1,142 @@
-int g = 13; //グースイッチの宣言
-int c = 12; //チョキスイッチの宣言
-int p = 11;  //パースイッチの宣言
-int gl =A2;  //グーLEDの宣言
-int cl =A1;  //チョキEDの宣言
-int pl =A0;  //パーLEDの宣言
-#include "SoftwareSerial.h"
-#include "DFPlayer_Mini_Mp3.h"
+//ユーザー側宣言
+int g = 13; //グースイッチピン宣言
+int c = 12; //チョキスイッチピン宣言
+int p = 11; //パースイッチピン宣言
+int gLED =A2; //グーLEDピン宣言
+int cLED =A1; //チョキEDピン宣言
+int pLED =A0; //パーLEDピン宣言
 
+//CPU側宣言
+int cgLED=A5; //コンピューターグーLEDピン宣言
+int ccLED=A4; //コンピューターチョキLEDピン宣言
+int cpLED=A3; //コンピューターパーLEDピン宣言
 
-int cgl=A5;
-int ccl=A4;
-int cpl=A3;
-int one=1,loopp,chages,mp3=1;
-int kati=9;
-int make=10;
+//システム宣言
+#include "SoftwareSerial.h" //シリアル通信
+#include "DFPlayer_Mini_Mp3.h" //DFPlayer用ライブラリ
+int credit=1,wait,chages,playmusic=1;
+int WinLED=9; //勝利判定LEDピン宣言
+int LoseLED=10; //敗北判定LEDピン宣言
 
 void setup() {
-  // put your setup code here, to run once:
  pinMode(g,INPUT_PULLUP);
  pinMode(c,INPUT_PULLUP);
  pinMode(p,INPUT_PULLUP);
- pinMode(gl,OUTPUT);
- pinMode(cl,OUTPUT);
- pinMode(pl,OUTPUT);
- pinMode(cgl,OUTPUT);
- pinMode(ccl,OUTPUT);
- pinMode(cpl,OUTPUT);
+ pinMode(gLED,OUTPUT);
+ pinMode(cLED,OUTPUT);
+ pinMode(pLED,OUTPUT);
+ pinMode(cgLED,OUTPUT);
+ pinMode(ccLED,OUTPUT);
+ pinMode(cpLED,OUTPUT);
+ pinMode(WinLED,OUTPUT);
+ pinMode(LoseLED,OUTPUT);
  pinMode(2,INPUT_PULLUP);
  pinMode(3,INPUT_PULLUP);
- attachInterrupt(digitalPinToInterrupt(3),reset,FALLING);
- attachInterrupt(digitalPinToInterrupt(2),chage,FALLING);
- pinMode(kati,OUTPUT);
- pinMode(make,OUTPUT);
- pinMode(4,INPUT_PULLUP);
- if (digitalRead(4) == LOW)
-  { chages = 1;
-   }else{
-    one = 999;
-   }
+ pinMode(4,INPUT_PULLUP);//ゲームモード切り替えスイッチ（毎回チャージ必須・無限）
 
-  Serial.begin (9600);
+ attachInterrupt(digitalPinToInterrupt(3),reset,FALLING); //リセットボタン（クレジットクリア）
+ attachInterrupt(digitalPinToInterrupt(2),chage,FALLING); //クレジットボタン
+ 
+ Serial.begin (9600);
   mp3_set_serial (Serial);  //set Serial for DFPlayer-mini mp3 module 
   mp3_set_volume (20); //0-30　音量
-
-
+ 
+ if (digitalRead(4) == LOW)//ゲームモード判定
+  { chages = 1; //１チャージで遊べる回数
+   }else{
+    credit = 9999; //無限回数
+   }
 }
+
 
 void loop() {
-  if (loopp == 0){
-    lloop(); 
-    }
-    
-  if(mp3 == 1 &&one >=1)
+  if (wait == 0){
+    COMLED(); //CPUのLEDを高速点灯させる waitが１になるまで　
+    }    
+  
+  if(playmusic == 1 &&credit >=1)//「じゃんけん」を言ってない＆creditが１以上
   {
-    mp3_play(1);
-    mp3 =2;
+    mp3_play(1); //ファイル１を再生
+    playmusic =2; //再生を一回だけ
   }
 
-
-  
-  if (one >= 1){
-    if (digitalRead(g) == LOW) {
-      
-      loopp =1;
-      one = one-1;
-      Gu();
-      
-      
-      
-
-    }
-    if (digitalRead(c) == LOW ) {
-      
-      loopp =1;
-      one = one-1;
-      Choki();
-      
-    }
-    if (digitalRead(p) == LOW) {
-      
-      loopp =1;
-      one = one-1;
-      Pa();
-      
-    }
+  if (credit >= 1){ //creditがある時
+    if (digitalRead(g) == LOW) { //グーが押された時
+      wait =1; //COMLEDを高速点灯させない
+      credit = credit-1; //creditを一回使用
+      Gu(); //グー処理
+      }
     
-   }
-   else{
-    loopp =1;
-    mp3=1;
-   }
-   
-  }
-void reset(){
-  loopp = 0;
-  one =1;
-  digitalWrite(gl,LOW);
-  digitalWrite(cl,LOW);
-  digitalWrite(pl,LOW);
-  digitalWrite(kati,LOW);
-  digitalWrite(make,LOW);
-  }
-void chage(){
-  one = one+chages;
-  loopp = 0;
-  digitalWrite(gl,LOW);
-  digitalWrite(cl,LOW);
-  digitalWrite(pl,LOW);
-  digitalWrite(kati,LOW);
-  digitalWrite(make,LOW);
-  
+    if (digitalRead(c) == LOW ) { //チョキが押された時
+      wait =1;
+      credit = credit-1;
+      Choki();
+      }
+    
+    if (digitalRead(p) == LOW) { //パーが押された時
+      wait =1;
+      credit = credit-1;
+      Pa();
+      }
+
+    }else{ //creditが無くなったら
+      wait =1; //高速点灯はしない
+      playmusic=1; //「じゃんけん」を言わない
+    }
 }
-void lloop(){
-  digitalWrite(cgl,HIGH);
+
+void reset(){ //リセットボタン
+  wait = 0; //高速点灯処理初期化
+  credit =1; //credit初期化
+  digitalWrite(gLED,LOW);
+  digitalWrite(cLED,LOW);
+  digitalWrite(pLED,LOW);
+  digitalWrite(WinLED,LOW);
+  digitalWrite(LoseLED,LOW);
+}
+
+void chage(){ //チャージ処理
+  credit = credit+chages; //既存のcreditにChage回加算
+  wait = 0; //高速点灯処理初期化
+  digitalWrite(gLED,LOW);
+  digitalWrite(cLED,LOW);
+  digitalWrite(pLED,LOW);
+  digitalWrite(WinLED,LOW);
+  digitalWrite(LoseLED,LOW); 
+}
+
+void COMLED(){//高速点灯処理
+  digitalWrite(cgLED,HIGH);
   delay(40);
-  digitalWrite(cgl,LOW);
-  digitalWrite(ccl,HIGH);
+  digitalWrite(cgLED,LOW);
+  digitalWrite(ccLED,HIGH);
   delay(40);
-  digitalWrite(ccl,LOW);
-  digitalWrite(cpl,HIGH);
+  digitalWrite(ccLED,LOW);
+  digitalWrite(cpLED,HIGH);
   delay(40);
-  digitalWrite(cpl,LOW);
-  }
+  digitalWrite(cpLED,LOW);
+}
 
 void Gu(){
   mp3_play(2);
   int CPU=random(3); //ランダム生成器
-  digitalWrite(gl,HIGH);//自分の出した手のライトを点灯
+  digitalWrite(gLED,HIGH);//自分の出した手のライトを点灯
   
   if ( CPU == 0){//グーあいこ
-    digitalWrite(cgl,HIGH);//CPUの手のライトを点灯
+    digitalWrite(cgLED,HIGH);//CPUの手のライトを点灯
     delay(1000);
     mp3_play(3);
-    digitalWrite(gl,LOW);//あいこのため再試合
-    digitalWrite(cgl,LOW);
-    one = one+1;
-    loopp =0;
+    digitalWrite(gLED,LOW);//あいこのため再試合
+    digitalWrite(cgLED,LOW);
+    credit = credit+1;
+    wait =0;
   } 
   if (CPU ==1){//チョキ　勝ち
-    digitalWrite(ccl,HIGH);
+    digitalWrite(ccLED,HIGH);
     win();
   }
   if (CPU ==2){//パー　負け
-    digitalWrite(cpl,HIGH);
+    digitalWrite(cpLED,HIGH);
     lose();
   }
 }
@@ -150,23 +144,23 @@ void Gu(){
 void Choki(){
   mp3_play(2);
   int CPU=random(3); //ランダム生成器
-  digitalWrite(cl,HIGH);//自分の出した手のライトを点灯
+  digitalWrite(cLED,HIGH);//自分の出した手のライトを点灯
   
   if ( CPU == 0){//グー　負け
-    digitalWrite(cgl,HIGH);//CPUの手のライトを点灯
+    digitalWrite(cgLED,HIGH);//CPUの手のライトを点灯
     lose();
   } 
   if (CPU ==1){//チョキ　あいこ
-    digitalWrite(ccl,HIGH);
+    digitalWrite(ccLED,HIGH);
     delay(1000);
     mp3_play(3);
-    digitalWrite(cl,LOW);//あいこのため再試合
-    digitalWrite(ccl,LOW);
-    one = one+1;
-    loopp =0;
+    digitalWrite(cLED,LOW);//あいこのため再試合
+    digitalWrite(ccLED,LOW);
+    credit = credit+1;
+    wait =0;
   }
   if (CPU ==2){//パー　勝ち
-    digitalWrite(cpl,HIGH);
+    digitalWrite(cpLED,HIGH);
     win();
   }
 }
@@ -174,60 +168,53 @@ void Choki(){
 void Pa(){
   mp3_play(2);
   int CPU=random(3); //ランダム生成器
-  digitalWrite(pl,HIGH);//自分の出した手のライトを点灯
+  digitalWrite(pLED,HIGH);//自分の出した手のライトを点灯
   
   if ( CPU == 0){//グー　勝ち
-    digitalWrite(cgl,HIGH);//CPUの手のライトを点灯
+    digitalWrite(cgLED,HIGH);//CPUの手のライトを点灯
     win();
   } 
   if (CPU ==1){//チョキ　負け
-    digitalWrite(ccl,HIGH);
+    digitalWrite(ccLED,HIGH);
     lose();
   }
   if (CPU ==2){//パー　あいこ
-    digitalWrite(cpl,HIGH);
+    digitalWrite(cpLED,HIGH);
     delay(1000);
     mp3_play(3);
-    digitalWrite(pl,LOW);//あいこのため再試合
-    digitalWrite(cpl,LOW);
-    one = one+1;
-    loopp =0;
+    digitalWrite(pLED,LOW);//あいこのため再試合
+    digitalWrite(cpLED,LOW);
+    credit = credit+1;
+    wait =0;
   }
 }
 
-void win(){
-  
+void win(){//勝利処理  
   delay(1000);
   mp3_play(5);
-  digitalWrite(kati,HIGH);
+  digitalWrite(WinLED,HIGH);
   delay(4000);
-  loopp = 0;
-  digitalWrite(gl,LOW);
-  digitalWrite(cl,LOW);
-  digitalWrite(pl,LOW);
-  digitalWrite(kati,LOW);
-  if(one >=1){
-    mp3=1;
+  wait = 0;
+  digitalWrite(gLED,LOW);
+  digitalWrite(cLED,LOW);
+  digitalWrite(pLED,LOW);
+  digitalWrite(WinLED,LOW);
+  if(credit >=1){
+    playmusic=1;
   }
-  
-  
-  
-  
 }
+
 void lose(){
-  
   delay(1000);
   mp3_play(4);
-  digitalWrite(make,HIGH);
+  digitalWrite(LoseLED,HIGH);
   delay(4500);
-  loopp = 0;
-  digitalWrite(gl,LOW);
-  digitalWrite(cl,LOW);
-  digitalWrite(pl,LOW);
-  digitalWrite(make,LOW);
-  if(one >=1){
-    mp3=1;
+  wait = 0;
+  digitalWrite(gLED,LOW);
+  digitalWrite(cLED,LOW);
+  digitalWrite(pLED,LOW);
+  digitalWrite(LoseLED,LOW);
+  if(credit >=1){
+    playmusic=1;
   }
-  
-  
-  }
+}
